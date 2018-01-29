@@ -1,17 +1,6 @@
 var express = require('express');
 var router = express.Router();
 var mongo = require('mongodb');
-// var db = require('monk')('ds217898.mlab.com:17898/nerdtalk', {
-//   username : 'admin',
-//   password : 'admin123',
-//    "roles": [
-//         {
-//             "role": "dbOwner",
-//             "db": "nerdtalk"
-//         }
-//     ]
-// });
-// var db = require('monk')('mongodb://admin:admin123@ds217898.mlab.com:17898/nerdtalk');
 var db = require('monk')('localhost/nerdtalk');
 
 

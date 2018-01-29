@@ -265,3 +265,15 @@ body.article{
     padding: 15px;
     margin: 0 auto;
 }
+
+form.addform {
+    width: 70%;
+    margin: auto;
+    margin-top: 53px;
+}
+
+h1.add-headline {
+    width: 70%;
+    margin: auto;
+    margin-top: 50px;
+}

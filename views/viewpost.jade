@@ -1,0 +1,19 @@
+extends layout
+
+block content
+        .article-wrap
+            .header-image
+                img(src='/images/uploads/#{post.image}')
+            .article-cont
+                .poster-cont
+                    .pic
+                        img(src='/assets/img/faces/8.jpg')
+                    .postername
+                        | Amitabh Kumar
+                .article-heading=post.title
+                !=post.body
+                .pull-left.heart-cont
+                    .heart-react.heart-react2
+                        i.fa.fa-heart-o(aria-hidden='true')
+                    .heart-number.number2
+                        | 23 People Liked

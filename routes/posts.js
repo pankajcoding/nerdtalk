@@ -1,10 +1,6 @@
 var express = require('express');
 var router = express.Router();
 var mongo = require('mongodb');
-// var db = require('monk')('ds217898.mlab.com:17898/nerdtalk', {
-//   username : 'admin',
-//   password : 'admin123'
-// });
 var db = require('monk')('localhost/nerdtalk');
 
 router.get('/show/:id', function(req, res, next) {
@@ -13,6 +9,24 @@ router.get('/show/:id', function(req, res, next) {
 
     posts.findById(req.params.id, function(err, post){
         res.render('show',{
+            "post": post
+        });
+    });
+});
+router.get('/newsfeed', function(req, res, next) {
+
+    var posts = db.get('posts');
+    posts.find({},{},function(err, posts){
+      res.render('index', {
+          "posts": posts
+      });
+});
+router.get('/view/:id', function(req, res, next) {
+
+    var posts = db.get('posts');
+
+    posts.findById(req.params.id, function(err, post){
+        res.render('viewpost',{
             "post": post
         });
     });
