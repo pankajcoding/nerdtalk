@@ -2,36 +2,41 @@ var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
+
+var expressValidator = require('express-validator');
+
 var cookieParser = require('cookie-parser');
+
 var session = require('express-session');
-var flash = require('express-flash');
+
 var bodyParser = require('body-parser');
-var mongoose = require('mongoose');
-var passport = require('passport');
+var mongo = require('mongodb');
+// var db = require('monk')('ds217898.mlab.com:17898/nerdtalk');
+// var db = require('monk')('mongodb://admin:admin123@ds217898.mlab.com:17898/nerdtalk');
+var db = require('monk')('localhost/nerdtalk');
 
+var multer = require('multer');
+var flash = require('connect-flash');
 
-
-
-
-
-var index = require('./routes/index');
-var users = require('./routes/users');
+var routes = require('./routes/index');
+var posts = require('./routes/posts');
+var categories = require('./routes/categories');
 
 var app = express();
 
+app.locals.moment = require('moment');
 
-mongoose.connect(process.env.MONGODB);
-mongoose.connection.on('error', function() {
-  console.log('MongoDB Connection Error. Please make sure that MongoDB is running.');
-  process.exit(1);
-});
-
-
-
+app.locals.truncateText = function(text, length){
+    var truncateText = text.substring(0,length);
+    return truncateText;
+};
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'ejs');
+app.set('view engine', 'jade');
+
+// Handle file uploads
+app.use(multer({ dest:'./public/images/uploads'}));
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
@@ -39,22 +44,50 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(flash());
-app.use(passport.initialize());
-app.use(passport.session());
-app.use(function(req, res, next) {
-  res.locals.user = req.user;
-  next();
-});
+
+// Handle Express Sessions
+app.use(session({
+    secret:'secret',
+    saveUninitialized: true,
+    resave: true
+}));
+
+// Validator
+app.use(expressValidator({
+  errorFormatter: function(param, msg, value) {
+      var namespace = param.split('.')
+      , root    = namespace.shift()
+      , formParam = root;
+
+    while(namespace.length) {
+      formParam += '[' + namespace.shift() + ']';
+    }
+    return {
+      param : formParam,
+      msg   : msg,
+      value : value
+    };
+  }
+}));
+
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', index);
-app.use('/users', users);
-app.get('/auth/facebook', passport.authenticate('facebook', { scope: ['email', 'user_location'] }));
-app.get('/auth/facebook/callback', passport.authenticate('facebook', { successRedirect: '/', failureRedirect: '/login' }));
-app.get('/auth/github', passport.authenticate('github', { scope: [ 'user:email profile repo' ] }));
-app.get('/auth/github/callback', passport.authenticate('github', { successRedirect: '/', failureRedirect: '/login' }));
 
+app.use(flash());
+app.use(function (req, res, next) {
+  res.locals.messages = require('express-messages')(req, res);
+  next();
+});
+
+// catch 404 and forward to error handler
+app.use(function(req, res, next) {
+  req.db =  db;
+  next();
+});
+
+app.use('/', routes);
+app.use('/posts', posts);
+app.use('/categories', categories);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -63,15 +96,29 @@ app.use(function(req, res, next) {
   next(err);
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+// error handlers
 
-  // render the error page
+// development error handler
+// will print stacktrace
+if (app.get('env') === 'development') {
+  app.use(function(err, req, res, next) {
+    res.status(err.status || 500);
+    res.render('error', {
+      message: err.message,
+      error: err
+    });
+  });
+}
+
+// production error handler
+// no stacktraces leaked to user
+app.use(function(err, req, res, next) {
   res.status(err.status || 500);
-  res.render('error');
+  res.render('error', {
+    message: err.message,
+    error: {}
+  });
 });
+
 
 module.exports = app;
