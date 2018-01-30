@@ -4,13 +4,28 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 
 var expressValidator = require('express-validator');
-
-var cookieParser = require('cookie-parser');
-
-var session = require('express-session');
-
 var bodyParser = require('body-parser');
 var mongo = require('mongodb');
+var GitHubStrategy = require('passport-github2').Strategy;
+var GITHUB_CLIENT_ID = "--insert-github-client-id-here--";
+var GITHUB_CLIENT_SECRET = "--insert-github-client-secret-here--";
+passport.use(new GitHubStrategy({
+    clientID: GITHUB_CLIENT_ID,
+    clientSecret: GITHUB_CLIENT_SECRET,
+    callbackURL: "http://127.0.0.1:3000/auth/github/callback"
+  },
+  function(accessToken, refreshToken, profile, done) {
+    // asynchronous verification, for effect...
+    process.nextTick(function () {
+      
+      // To keep the example simple, the user's GitHub profile is returned to
+      // represent the logged-in user.  In a typical application, you would want
+      // to associate the GitHub account with a user record in your database,
+      // and return that user instead.
+      return done(null, profile);
+    });
+  }
+));
 // var db = require('monk')('ds217898.mlab.com:17898/nerdtalk');
 // var db = require('monk')('mongodb://admin:admin123@ds217898.mlab.com:17898/nerdtalk');
 var db = require('monk')('localhost/nerdtalk');
@@ -22,10 +37,42 @@ var routes = require('./routes/index');
 var posts = require('./routes/posts');
 var categories = require('./routes/categories');
 
-var app = express();
+var app = express(),
+    passport = require('passport'),
+    auth = require('./auth'),
+    cookieParser = require('cookie-parser'),
+    cookieSession = require('cookie-session');
+
+auth(passport);
+app.use(passport.initialize());
+
+app.use(cookieSession({
+    name: 'session',
+    keys: ['SECRECT KEY'],
+    maxAge: 24 * 60 * 60 * 1000
+}));
+app.use(cookieParser());
+passport.serializeUser(function(user, done) {
+  // placeholder for custom user serialization
+  // null is for errors
+  done(null, user);
+});
+
+passport.deserializeUser(function(user, done) {
+  // placeholder for custom user deserialization.
+  // maybe you are getoing to get the user from mongo by id?
+  // null is for errors
+  done(null, user);
+});
 
 app.locals.moment = require('moment');
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
 app.locals.truncateText = function(text, length){
     var truncateText = text.substring(0,length);
     return truncateText;
@@ -43,14 +90,6 @@ app.use(multer({ dest:'./public/images/uploads'}));
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
-
-// Handle Express Sessions
-app.use(session({
-    secret:'secret',
-    saveUninitialized: true,
-    resave: true
-}));
 
 // Validator
 app.use(expressValidator({
@@ -88,6 +127,41 @@ app.use(function(req, res, next) {
 app.use('/', routes);
 app.use('/posts', posts);
 app.use('/categories', categories);
+app.get('/auth/google', passport.authenticate('google', {
+    scope: ['profile','email']
+}));
+
+
+app.get('/auth/google/callback',
+    passport.authenticate('google', {
+        failureRedirect: '/'
+    }),
+    (req, res) => {
+        console.log(req.user.token);
+        req.session.token = req.user.token;
+        res.redirect('/check');
+    }
+);
+
+app.get('/check', (req, res) => {
+    if (req.session.token) {
+        res.cookie('token', req.session.token);
+        res.json({
+            status: 'session cookie set'
+        });
+    } else {
+        res.cookie('token', '')
+        res.json({
+            status: 'session cookie not set'
+        });
+    }
+});
+
+app.get('/logout', (req, res) => {
+    req.logout();
+    req.session = null;
+    res.redirect('/check');
+});
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -120,5 +194,7 @@ app.use(function(err, req, res, next) {
   });
 });
 
+process.env.HTTPS_PROXY = 'http://172.16.2.30:8080';
+process.env.HTTP_PROXY = 'http://172.16.2.30:8080';
 
 module.exports = app;

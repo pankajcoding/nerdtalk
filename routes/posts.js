@@ -3,6 +3,9 @@ var router = express.Router();
 var mongo = require('mongodb');
 var db = require('monk')('localhost/nerdtalk');
 
+
+
+
 router.get('/show/:id', function(req, res, next) {
 
     var posts = db.get('posts');
@@ -13,14 +16,7 @@ router.get('/show/:id', function(req, res, next) {
         });
     });
 });
-router.get('/newsfeed', function(req, res, next) {
 
-    var posts = db.get('posts');
-    posts.find({},{},function(err, posts){
-      res.render('index', {
-          "posts": posts
-      });
-});
 router.get('/view/:id', function(req, res, next) {
 
     var posts = db.get('posts');
