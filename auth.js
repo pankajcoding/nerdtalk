@@ -9,9 +9,9 @@ module.exports = (passport) => {
         done(null, user);
     });
     passport.use(new GoogleStrategy({
-            clientID: "645749915463-6ibotc6pf51q87qg7vfrrfcvgitoob3i.apps.googleusercontent.com",
-            clientSecret: "rGmYIQEoltkja5_m49YeJLMT",
-            callbackURL: "http://localhost:3000/auth/google/callback"
+            clientID: "322457436733-3f6e1i8sligc2voenbjvt6qkjt1cdb4s.apps.googleusercontent.com",
+            clientSecret: "mgL7Q36YfleHxeYdmfGI2bpW",
+            callbackURL: "https://newgit-pankajcoding.c9users.io/auth/google/callback"
         },
         (token, refreshToken, profile, done) => {
             return done(null, {     

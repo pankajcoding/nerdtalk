@@ -6,7 +6,7 @@ var db = require('monk')('localhost/nerdtalk');
 
 
 
-router.get('/show/:id', function(req, res, next) {
+router.get('/show/:id',ensureAuthenticated, function(req, res, next) {
 
     var posts = db.get('posts');
 
@@ -75,33 +75,32 @@ router.post('/add', function(req, res, next){
             "body": body
         });
     } else {
-        var posts = db.get('posts');
-
-        // Submit to db
-        posts.insert({
+        var postnew={
             "title": title,
             "body": body,
-            "category": category,
             "date": date,
-            "author": author,
             "image": mainImageName
-        }, function(err, post){
+        }
+        var email=req.session.passport.user.profile.emails[0].value;
+        console.log('email'+email);
+        var users=db.get('users');
+        users.update(
+             { email: email },
+             { $addToSet: { posts: postnew  } },
+            function(err, post){
             if(err){
                 res.send('There was an issue submitting the post');
             } else {
-                req.flash('success', 'Post Submitted');
+                //req.flash('success', 'Post Submitted');
                 res.location('/');
                 res.redirect('/');
+               
             }
-        });
+        }
+            );
     }
 
-    req.checkBody('name','Name field is required').notEmpty();
-    req.checkBody('email','Email field is required').notEmpty();
-    req.checkBody('email','Email not valid').isEmail();
-    req.checkBody('username','Username field is required').notEmpty();
-    req.checkBody('password','Password field is required').notEmpty();
-    req.checkBody('password2','Password do not match').equals(req.body.password);
+    
 
 });
 
@@ -163,5 +162,10 @@ router.post('/addcomment', function(req, res, next){
     }
 
 });
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) { return next(); }
+  res.redirect('/login');
+}
+
 
 module.exports = router;

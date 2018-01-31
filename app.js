@@ -6,26 +6,7 @@ var logger = require('morgan');
 var expressValidator = require('express-validator');
 var bodyParser = require('body-parser');
 var mongo = require('mongodb');
-var GitHubStrategy = require('passport-github2').Strategy;
-var GITHUB_CLIENT_ID = "--insert-github-client-id-here--";
-var GITHUB_CLIENT_SECRET = "--insert-github-client-secret-here--";
-passport.use(new GitHubStrategy({
-    clientID: GITHUB_CLIENT_ID,
-    clientSecret: GITHUB_CLIENT_SECRET,
-    callbackURL: "http://127.0.0.1:3000/auth/github/callback"
-  },
-  function(accessToken, refreshToken, profile, done) {
-    // asynchronous verification, for effect...
-    process.nextTick(function () {
-      
-      // To keep the example simple, the user's GitHub profile is returned to
-      // represent the logged-in user.  In a typical application, you would want
-      // to associate the GitHub account with a user record in your database,
-      // and return that user instead.
-      return done(null, profile);
-    });
-  }
-));
+
 // var db = require('monk')('ds217898.mlab.com:17898/nerdtalk');
 // var db = require('monk')('mongodb://admin:admin123@ds217898.mlab.com:17898/nerdtalk');
 var db = require('monk')('localhost/nerdtalk');
@@ -55,6 +36,7 @@ app.use(cookieParser());
 passport.serializeUser(function(user, done) {
   // placeholder for custom user serialization
   // null is for errors
+ 
   done(null, user);
 });
 
@@ -128,7 +110,7 @@ app.use('/', routes);
 app.use('/posts', posts);
 app.use('/categories', categories);
 app.get('/auth/google', passport.authenticate('google', {
-    scope: ['profile','email']
+    scope: ['https://www.googleapis.com/auth/plus.login','https://www.googleapis.com/auth/plus.profile.emails.read']
 }));
 
 
@@ -137,22 +119,71 @@ app.get('/auth/google/callback',
         failureRedirect: '/'
     }),
     (req, res) => {
-        console.log(req.user.token);
-        req.session.token = req.user.token;
-        res.redirect('/check');
+      var User = db.get('users');
+        User.findOne({
+        email:  req.user.profile.emails[0].value
+      }, function(err, user) {
+        if (err) return err;
+
+        if (!user) {
+          
+          
+  
+        
+        var profile=req.user.profile;
+        var users = db.get('users');
+        console.log(JSON.stringify(profile));
+        var photo=profile.photos[0].value.split('?')[0];
+        // Submit to db
+        users.insert({
+            "name": profile.displayName,
+            "email": profile.emails[0].value,
+            "photo": photo,
+            "client": profile.provider,
+            "followers":[],
+            "following":[]
+        }, function(err, user){
+            if(err){
+                res.send('There was an signingup');
+            } else {
+                req.flash('success', 'Login Succesful'+JSON.stringify(user));
+               
+            }
+        });
+		      
+          
+        }
+        
+         req.session.token = req.user.token;
+           res.location('/');
+           res.redirect('/');
+        
+        
+        
+       })
+        
+        
+        
+       
+		
+		
+        //console.log(JSON.stringify(req.user));
+        //res.redirect('/check');
     }
 );
 
 app.get('/check', (req, res) => {
     if (req.session.token) {
         res.cookie('token', req.session.token);
+        
         res.json({
-            status: 'session cookie set'
+            status: 'session cookie set',
+            user: req.user
         });
     } else {
         res.cookie('token', '')
         res.json({
-            status: 'session cookie not set'
+            status: 'session cookie not set',
         });
     }
 });
@@ -160,8 +191,12 @@ app.get('/check', (req, res) => {
 app.get('/logout', (req, res) => {
     req.logout();
     req.session = null;
-    res.redirect('/check');
+    res.redirect('/login');
 });
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) { return next(); }
+  res.redirect('/login');
+}
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

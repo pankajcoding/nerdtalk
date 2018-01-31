@@ -11,20 +11,8 @@ block content
             label Title:
             input.form-control(name='title', type='text')
         .form-group
-            label Category:
-            select.form-control(name='category')     
-                each category, i in categories
-                    option(value='#{category.title}') #{category.title}
-        .form-group
             label Body:
-            textarea.form-control(name='body', id='body')  
-        .form-group
-            label Author:
-            select.form-control(name='author')
-                option(value='Brad Traversy') Brad Travers
-                option(value='John Doe') John Doe
-        .form-group
-                  
+            textarea.form-control(name='body', id='body')
         .form-group.form-file-upload.form-file-multiple.bmd-form-group
             label Main Image:  
             input.inputFileHidden(type='file', multiple='',name='mainimage')

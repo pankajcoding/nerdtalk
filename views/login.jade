@@ -16,38 +16,24 @@ html
         link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css')
         link(rel='stylesheet', href='/assets/css/material-kit.css?v=2.0.0')
         link(rel='stylesheet', href='/assets/css/style.css')
-    body.article
+    body.login-article
         nav#sectionsNav.navbar.fixed-top.navbar-expand-lg(color-on-scroll='0')
             .container
                 .navbar-translate
-                    a.navbar-brand(href='/') Nerdtalk 
+                    a.navbar-brand(href='../index.html') Nerdtalk 
                     button.navbar-toggler(type='button', data-toggle='collapse', aria-expanded='false', aria-label='Toggle navigation')
                         span.navbar-toggler-icon
                         span.navbar-toggler-icon
                         span.navbar-toggler-icon
-                .collapse.navbar-collapse
-                    ul.navbar-nav.ml-auto
-                        li.nav-item
-                            .nav-link
-                                input.form-control.search-input(type='text', placeholder='Search Fellow Nerds')
-                                i.material-icons.searchicon.pointer search
-                        li.nav-item
-                            .nav-link
-                                a(href='/posts/add').btn.btn-success Add new post
-                        li.dropdown.nav-item.show
-                            a.dropdown-toggle.nav-link(href='#', data-toggle='dropdown', aria-expanded='true')
-                                i.material-icons account_circle
-                                | Profile
-                                .ripple-container
-                            .dropdown-menu.dropdown-with-icons
-                                a.dropdown-item(href='./logout')
-                                    i.material-icons layers
-                                    |  Logout
-                                a.dropdown-item(href='/introduction.html')
-                                    i.material-icons content_paste
-                                    |  Help              
           != messages()
-          block content
+          h2.login-headline Connect with awesome nerds arround the world
+          div.login-container
+            a(href='./auth/google')
+                button.btn.btn-social.btn-fill.btn-google
+                  i.fa.fa-google-plus-square
+                  |  Signin with Google
+                  .ripple-container
+
           script(src='/assets/js/core/jquery.min.js')
           script(src='/assets/js/core/popper.min.js')
           script(src='/assets/js/bootstrap-material-design.js')
